@@ -1,0 +1,8 @@
+{
+  "name": "Voice Tug War",
+  "description": "A real-time voice-controlled tug of war multiplayer game.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
