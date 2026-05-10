@@ -57,6 +57,7 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
     });
     
     return () => {
+      stopAllMusic();
       socket.off('roomState');
       socket.off('rematch-pending');
       socket.off('room-rematch');
@@ -88,6 +89,13 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
     prevCountdownRef.current = room.countdown;
   }, [room, team]);
 
+  const stopAllMusic = () => {
+    victoryAudio.pause();
+    victoryAudio.currentTime = 0;
+    defeatAudio.pause();
+    defeatAudio.currentTime = 0;
+  };
+
   const handleReady = () => {
     setAudioUnlocked(true);
     setMicActive(true);
@@ -99,6 +107,7 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
   };
 
   const handleRematch = useCallback(() => {
+    stopAllMusic();
     socket.emit('rematch-request', roomId);
     setRematchRequested(true);
   }, [roomId]);
@@ -144,8 +153,14 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                 </span>
              </div>
 
-             <button onClick={onLeave} className="p-3 bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-xl transition-all">
-                <LogOut className="w-5 h-5" />
+             <button
+               onClick={() => {
+                 stopAllMusic();
+                 onLeave();
+               }}
+               className="p-3 bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-xl transition-all"
+             >
+               <LogOut className="w-5 h-5" />
              </button>
           </div>
 
@@ -215,7 +230,15 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                      <button onClick={handleRematch} disabled={rematchRequested} className={`flex-1 font-black py-4 rounded-2xl shadow-xl active:scale-95 text-sm italic ${rematchRequested ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-950'}`}>
                        {rematchRequested ? 'ĐANG CHỜ...' : 'CHƠI LẠI'}
                      </button>
-                     <button onClick={onLeave} className="flex-1 bg-white/5 text-white font-black py-4 rounded-2xl border border-white/5 text-sm uppercase tracking-widest">THOÁT</button>
+                     <button
+                       onClick={() => {
+                         stopAllMusic();
+                         onLeave();
+                       }}
+                       className="flex-1 bg-white/5 text-white font-black py-4 rounded-2xl border border-white/5 text-sm uppercase tracking-widest"
+                     >
+                       THOÁT
+                     </button>
                    </div>
                  </motion.div>
               )}
