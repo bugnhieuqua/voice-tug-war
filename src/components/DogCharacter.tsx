@@ -16,9 +16,8 @@ export const DogCharacter: React.FC<DogCharacterProps> = ({
   isWinner,
   isLoser,
 }) => {
-  // Volume scaling logic
-  const jumpY = -(volume * 0.8);
-  const scale = 1 + volume / 300;
+  // Volume scaling logic - Focus on Scaling instead of Moving Up
+  const scale = 1 + volume / 180; // Phóng to mạnh hơn khi hét
   const isSpeaking = volume > 10;
 
   const dogImg =
@@ -53,13 +52,18 @@ export const DogCharacter: React.FC<DogCharacterProps> = ({
           }}
           className="relative z-10 w-full h-full rounded-[2rem] overflow-hidden border-[3px] border-white/20 shadow-2xl bg-gray-950"
         >
-          {/* DOG IMAGE WITH JUMP ANIMATION */}
+          {/* DOG IMAGE WITH SCALE/BOUNCE ANIMATION */}
           <motion.div
             animate={{
-              y: jumpY,
-              scale: isWinner ? [1, 1.1, 1] : scale,
+              scale: isWinner ? [1, 1.15, 1] : scale,
+              rotate: isSpeaking ? [0, -1, 1, 0] : 0
             }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 500, 
+              damping: 15,
+              scale: isWinner ? { repeat: Infinity, duration: 1 } : undefined
+            }}
             className="w-full h-full relative"
           >
             <img

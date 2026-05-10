@@ -53,8 +53,6 @@ export function Home({
     socket.on("match-found", (data) => {
       setSearching(false);
       setLoading(false);
-      matchFoundAudio.currentTime = 0;
-      matchFoundAudio.play().catch(() => {});
       onJoin(data.roomId, data.team, data.roomState);
     });
 
