@@ -13,13 +13,13 @@ const SLIDE_IMAGES = [
   "https://i.pinimg.com/736x/56/59/31/56593183178cb837775d8452023fd03e.jpg",
   "https://i.pinimg.com/736x/e0/02/9d/e0029def5b5938258c0ded2ad1e5b5b4.jpg",
   "https://i.pinimg.com/1200x/48/b3/2d/48b32d6d49cd9ef62647829c20368a89.jpg",
-  "https://i.pinimg.com/736x/5d/76/fd/5d76fd7108840bcc25e37e2624533a06.jpg"
+  "https://i.pinimg.com/736x/5d/76/fd/5d76fd7108840bcc25e37e2624533a06.jpg",
 ];
 
 const SEARCHING_IMAGES = [
   "https://i.pinimg.com/736x/3e/e9/4a/3ee94a9f33f3b738cf3f38cc99ab118e.jpg",
   "https://i.pinimg.com/736x/c3/20/d6/c320d6fbb902d639ee5692ec70dbb24c.jpg",
-  "https://i.pinimg.com/736x/52/a1/4e/52a14eaad4bda4f2090b5b90066825f8.jpg"
+  "https://i.pinimg.com/736x/52/a1/4e/52a14eaad4bda4f2090b5b90066825f8.jpg",
 ];
 
 export function Home({
@@ -117,7 +117,10 @@ export function Home({
     setLoading(true);
     socket.emit("createRoom", (res: any) => {
       if (res?.roomId) handleJoinRoom(res.roomId);
-      else { setLoading(false); setError("Lỗi tạo phòng"); }
+      else {
+        setLoading(false);
+        setError("Lỗi tạo phòng");
+      }
     });
   };
 
@@ -134,7 +137,6 @@ export function Home({
   return (
     <Layout>
       <div className="flex flex-col md:flex-row h-full w-full bg-[#0a0a0c] overflow-hidden">
-        
         {/* Slider Section */}
         <div className="order-1 md:order-2 flex-1 relative overflow-hidden bg-gray-950 min-h-[35vh] md:min-h-0 shrink-0">
           <AnimatePresence mode="wait">
@@ -147,8 +149,8 @@ export function Home({
               className="absolute inset-0"
             >
               <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-gray-950 via-transparent to-transparent z-10" />
-              <img 
-                src={SLIDE_IMAGES[currentSlide]} 
+              <img
+                src={SLIDE_IMAGES[currentSlide]}
                 className="w-full h-full object-cover"
                 alt="Dog War Slider"
               />
@@ -173,14 +175,20 @@ export function Home({
             className="w-full my-auto"
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${connected ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"}`}>
-                <div className={`w-1 h-1 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+              <div
+                className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${connected ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"}`}
+              >
+                <div
+                  className={`w-1 h-1 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-red-500"}`}
+                />
                 {connected ? "LIVE" : "OFFLINE"}
               </div>
             </div>
 
             <h1 className="text-[clamp(3.5rem,10vw,5rem)] font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 via-orange-500 to-red-600 mb-1 tracking-tighter italic leading-[0.85] drop-shadow-2xl">
-              DOG<br/>WAR
+              DOG
+              <br />
+              WAR
             </h1>
             <p className="text-gray-400 mb-8 font-black uppercase tracking-[0.2em] text-[10px] italic opacity-80">
               Gáy to lên để chiến thắng!
@@ -193,8 +201,10 @@ export function Home({
                 className="group w-full bg-gradient-to-r from-yellow-400 to-orange-600 hover:from-yellow-300 hover:to-orange-500 text-gray-950 font-black py-5 px-6 rounded-2xl flex items-center justify-between gap-3 shadow-[0_10px_30px_rgba(250,204,21,0.2)] active:scale-95 transition-all text-lg italic disabled:opacity-50"
               >
                 <div className="flex items-center gap-3">
-                  <Play className={`w-5 h-5 fill-gray-950 ${loading ? 'animate-spin' : ''}`} />
-                  <span>{loading ? 'ĐANG KẾT NỐI...' : 'TÌM TRẬN'}</span>
+                  <Play
+                    className={`w-5 h-5 fill-gray-950 ${loading ? "animate-spin" : ""}`}
+                  />
+                  <span>{loading ? "ĐANG KẾT NỐI..." : "TÌM TRẬN"}</span>
                 </div>
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -209,7 +219,9 @@ export function Home({
 
               <div className="flex items-center text-gray-800 gap-3 py-1">
                 <div className="flex-1 h-px bg-gray-800/50"></div>
-                <span className="text-[9px] font-black tracking-widest opacity-50 uppercase">Hoặc nhập mã</span>
+                <span className="text-[9px] font-black tracking-widest opacity-50 uppercase">
+                  Hoặc nhập mã
+                </span>
                 <div className="flex-1 h-px bg-gray-800/50"></div>
               </div>
 
@@ -238,9 +250,9 @@ export function Home({
               )}
             </div>
           </motion.div>
-          
+
           <div className="mt-8 pt-8 border-t border-white/5 text-[8px] font-bold text-gray-700 uppercase tracking-[0.4em] text-center md:text-left">
-            DOG WAR MULTIPLAYER &copy; 2026
+            DOG WAR
           </div>
         </div>
       </div>
@@ -255,40 +267,50 @@ export function Home({
           >
             {/* Background Slider for Searching Overlay */}
             <div className="absolute inset-0 z-0">
-               <AnimatePresence mode="wait">
-                 <motion.div
-                   key={searchSlide}
-                   initial={{ opacity: 0 }}
-                   animate={{ opacity: 0.4 }}
-                   exit={{ opacity: 0 }}
-                   transition={{ duration: 1 }}
-                   className="absolute inset-0"
-                 >
-                   <img 
-                     src={SEARCHING_IMAGES[searchSlide]} 
-                     className="w-full h-full object-cover blur-sm scale-110"
-                     alt="Searching Background"
-                   />
-                   <div className="absolute inset-0 bg-gray-950/80" />
-                 </motion.div>
-               </AnimatePresence>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={searchSlide}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.4 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1 }}
+                  className="absolute inset-0"
+                >
+                  <img
+                    src={SEARCHING_IMAGES[searchSlide]}
+                    className="w-full h-full object-cover blur-sm scale-110"
+                    alt="Searching Background"
+                  />
+                  <div className="absolute inset-0 bg-gray-950/80" />
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-             <div className="relative z-10 w-32 h-32 mb-8">
-               <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} className="absolute inset-0 border-2 border-yellow-500/20 rounded-full" />
-               <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 3, ease: "linear" }} className="absolute inset-2 border-2 border-orange-500/40 rounded-full border-t-orange-500" />
-               <div className="absolute inset-0 flex items-center justify-center">
-                 <Volume2 className="w-10 h-10 text-yellow-500 animate-pulse" />
-               </div>
-             </div>
-             
+            <div className="relative z-10 w-32 h-32 mb-8">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="absolute inset-0 border-2 border-yellow-500/20 rounded-full"
+              />
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                className="absolute inset-2 border-2 border-orange-500/40 rounded-full border-t-orange-500"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Volume2 className="w-10 h-10 text-yellow-500 animate-pulse" />
+              </div>
+            </div>
+
             <h2 className="relative z-10 text-4xl font-black text-white mb-2 italic tracking-tighter uppercase drop-shadow-lg">
               TÌM ĐỐI THỦ...
             </h2>
-            <p className="relative z-10 text-gray-400 text-[10px] font-bold tracking-[0.5em] mb-12 animate-pulse">HÃY SẴN SÀNG ĐỂ GÁY</p>
+            <p className="relative z-10 text-gray-400 text-[10px] font-bold tracking-[0.5em] mb-12 animate-pulse">
+              HÃY SẴN SÀNG ĐỂ GÁY
+            </p>
 
-            <button 
-              onClick={handleCancelMatch} 
+            <button
+              onClick={handleCancelMatch}
               className="relative z-10 bg-white/10 hover:bg-red-500/20 hover:text-red-500 text-gray-400 font-black py-4 px-12 rounded-2xl border border-white/5 hover:border-red-500/30 transition-all uppercase text-xs tracking-widest backdrop-blur-md active:scale-95"
             >
               HỦY TÌM KIẾM

@@ -30,6 +30,13 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
   const prevStatusRef = useRef(room?.status);
   const prevCountdownRef = useRef(room?.countdown);
 
+  const stopAllMusic = () => {
+    victoryAudio.pause();
+    victoryAudio.currentTime = 0;
+    defeatAudio.pause();
+    defeatAudio.currentTime = 0;
+  };
+
   const handleRoomState = useCallback((newState: any) => {
     setRoom(newState);
   }, []);
@@ -89,13 +96,6 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
     prevCountdownRef.current = room.countdown;
   }, [room, team]);
 
-  const stopAllMusic = () => {
-    victoryAudio.pause();
-    victoryAudio.currentTime = 0;
-    defeatAudio.pause();
-    defeatAudio.currentTime = 0;
-  };
-
   const handleReady = () => {
     setAudioUnlocked(true);
     setMicActive(true);
@@ -153,14 +153,14 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                 </span>
              </div>
 
-             <button
+             <button 
                onClick={() => {
                  stopAllMusic();
                  onLeave();
-               }}
+               }} 
                className="p-3 bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-xl transition-all"
              >
-               <LogOut className="w-5 h-5" />
+                <LogOut className="w-5 h-5" />
              </button>
           </div>
 
@@ -208,7 +208,7 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                    <h2 className="text-sm font-black text-white mb-1 uppercase tracking-widest italic">Đang chờ đối thủ...</h2>
                    <p className="text-[10px] text-gray-500 font-bold mb-5 uppercase tracking-widest">Người chơi: {players.length}/2</p>
                    {!micActive ? (
-                     <button onClick={handleReady} className="w-full bg-gradient-to-r from-yellow-400 to-orange-600 text-gray-950 font-black py-4 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all italic font-bold">
+                     <button onClick={handleReady} className="w-full bg-gradient-to-r from-yellow-400 to-orange-600 text-gray-950 font-black py-4 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all italic">
                        <Mic className="w-5 h-5 fill-gray-950" /> BẬT MIC & SẴN SÀNG
                      </button>
                    ) : (
@@ -230,15 +230,15 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                      <button onClick={handleRematch} disabled={rematchRequested} className={`flex-1 font-black py-4 rounded-2xl shadow-xl active:scale-95 text-sm italic ${rematchRequested ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-950'}`}>
                        {rematchRequested ? 'ĐANG CHỜ...' : 'CHƠI LẠI'}
                      </button>
-                     <button
-                       onClick={() => {
-                         stopAllMusic();
-                         onLeave();
-                       }}
-                       className="flex-1 bg-white/5 text-white font-black py-4 rounded-2xl border border-white/5 text-sm uppercase tracking-widest"
-                     >
-                       THOÁT
-                     </button>
+                     <button 
+                        onClick={() => {
+                          stopAllMusic();
+                          onLeave();
+                        }} 
+                        className="flex-1 bg-white/5 text-white font-black py-4 rounded-2xl border border-white/5 text-sm uppercase tracking-widest"
+                      >
+                        THOÁT
+                      </button>
                    </div>
                  </motion.div>
               )}
