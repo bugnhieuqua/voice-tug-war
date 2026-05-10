@@ -1,121 +1,116 @@
-import { memo } from 'react';
-import { motion } from 'motion/react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import React from "react";
+import { motion, AnimatePresence } from "motion/react";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-export const DogCharacter = memo(function DogCharacter({ 
-  volume, 
-  team, 
-  isWinner, 
-  isLoser,
-  label
-}: { 
-  volume: number; 
-  team: 'left' | 'right'; 
+interface DogCharacterProps {
+  team: "left" | "right";
+  volume: number;
+  label: string;
   isWinner?: boolean;
   isLoser?: boolean;
-  label?: string;
-}) {
-  const isYelling = volume > 15;
+}
 
-  const lift = isYelling ? -(volume / 100) * 40 : 0;
-  const scale = isWinner ? 1.5 : isLoser ? 0.8 : 1 + (volume / 100) * 0.3;
-  
-  const variants = {
-    idle: { scale: 1, y: 0, rotate: 0 },
-    yelling: { 
-      scale, 
-      y: lift,
-      rotate: team === 'left' ? [-1, 1, -1] : [1, -1, 1],
-      transition: {
-        y: { type: 'spring', stiffness: 300, damping: 20 },
-        rotate: { repeat: Infinity, duration: 0.1 }
-      }
-    },
-    winner: {
-      scale: 1.5,
-      y: [0, -40, 0],
-      rotate: [0, 10, -10, 0],
-      transition: { repeat: Infinity, duration: 0.5 }
-    },
-    loser: {
-      scale: 0.8,
-      y: 60,
-      opacity: 0.3,
-      rotate: team === 'left' ? -90 : 90,
-      transition: { duration: 0.5 }
-    }
-  };
+export const DogCharacter: React.FC<DogCharacterProps> = ({
+  team,
+  volume,
+  label,
+  isWinner,
+  isLoser,
+}) => {
+  // Volume scaling logic
+  const jumpY = -(volume * 0.8);
+  const scale = 1 + volume / 300;
+  const isSpeaking = volume > 10;
 
-  let animationState = 'idle';
-  if (isWinner) animationState = 'winner';
-  else if (isLoser) animationState = 'loser';
-  else if (isYelling) animationState = 'yelling';
+  const dogImg =
+    "https://i.pinimg.com/736x/6e/5b/ab/6e5bab41f576d5908eb2cacb2c302b25.jpg";
 
   return (
-    <div className="relative flex flex-col items-center">
-      <motion.div
-        variants={variants}
-        animate={animationState}
-        className={cn(
-          "w-36 h-36 md:w-56 md:h-56 rounded-3xl overflow-hidden border-8 bg-gray-900 shadow-2xl relative transition-colors duration-300",
-          team === 'left' ? 'border-red-500 shadow-red-500/40' : 'border-blue-500 shadow-blue-500/40',
-          isYelling && (team === 'left' ? 'shadow-red-500/80' : 'shadow-blue-500/80')
-        )}
-      >
-        <img 
-          src="https://i.pinimg.com/736x/ba/8d/16/ba8d1675c50578787597603adf2ce92b.jpg" 
-          className={cn(
-            "w-full h-full object-cover",
-            team === 'right' && "transform scale-x-[-1]"
+    <div
+      className={`relative flex flex-col items-center flex-1 max-w-[28%] mt-12 transition-all duration-500 ${isLoser ? "grayscale opacity-40 scale-90" : ""}`}
+    >
+      <div className="relative w-full aspect-[4/5] flex items-center justify-center">
+        {/* SOUND WAVE PARTICLES */}
+        <AnimatePresence>
+          {isSpeaking && (
+            <>
+              <motion.div
+                initial={{ scale: 1, opacity: 0.8 }}
+                animate={{ scale: 1.7, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, repeat: Infinity }}
+                className={`absolute inset-0 rounded-[2rem] border-4 ${team === "left" ? "border-blue-500/50" : "border-red-500/50"} z-0`}
+              />
+            </>
           )}
-          alt="Dog Player" 
-        />
-        
-        {isYelling && !isWinner && !isLoser && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: (volume / 100) * 0.6 }}
-            className={cn(
-              "absolute inset-0 mix-blend-overlay",
-              team === 'left' ? 'bg-red-500' : 'bg-blue-500'
-            )} 
-          />
-        )}
-      </motion.div>
-      
-      {isYelling && !isWinner && !isLoser && (
-         <div className="absolute -top-12 flex gap-1.5 h-8 items-end">
-           {[...Array(5)].map((_, i) => (
-             <motion.div 
-               key={i}
-               animate={{ 
-                 height: [10, (volume / 100) * 40 + Math.random() * 20, 10],
-                 opacity: [0.5, 1, 0.5]
-               }}
-               transition={{ repeat: Infinity, duration: 0.15 + i * 0.05 }}
-               className={cn(
-                 "w-2.5 rounded-full",
-                 team === 'left' ? "bg-red-500" : "bg-blue-500"
-               )}
-             />
-           ))}
-         </div>
-      )}
+        </AnimatePresence>
 
-      <motion.div 
-        animate={{ scale: isYelling ? 1.1 : 1 }}
-        className={cn(
-          "mt-6 px-6 py-2 rounded-xl text-white font-black tracking-widest text-base shadow-xl min-w-[120px] text-center",
-          team === 'left' ? 'bg-gradient-to-br from-red-600 to-red-800' : 'bg-gradient-to-br from-blue-600 to-blue-800'
+        {/* GLOW EFFECT */}
+        <motion.div
+          animate={{
+            boxShadow: isSpeaking
+              ? `0 0 ${volume}px ${volume / 4}px ${team === "left" ? "rgba(59,130,246,0.3)" : "rgba(239,68,68,0.3)"}`
+              : "0 0 15px rgba(0,0,0,0.3)",
+          }}
+          className="relative z-10 w-full h-full rounded-[2rem] overflow-hidden border-[3px] border-white/20 shadow-2xl bg-gray-950"
+        >
+          {/* DOG IMAGE WITH JUMP ANIMATION */}
+          <motion.div
+            animate={{
+              y: jumpY,
+              scale: isWinner ? [1, 1.1, 1] : scale,
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="w-full h-full relative"
+          >
+            <img
+              src={dogImg}
+              alt="Dog Fighter"
+              className={`w-full h-full object-cover ${team === "right" ? "-scale-x-100" : ""}`}
+            />
+
+            {/* Label Overlay */}
+            <div
+              className={`absolute bottom-0 left-0 right-0 py-2 text-center backdrop-blur-md border-t border-white/10 ${
+                team === "left"
+                  ? "bg-blue-600/90 text-white"
+                  : "bg-red-600/90 text-white"
+              }`}
+            >
+              <span className="text-[clamp(9px,1.8vw,11px)] font-black italic tracking-widest uppercase">
+                {label}
+              </span>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* SPEAKING PARTICLES */}
+        {isSpeaking && (
+          <div className="absolute inset-0 pointer-events-none z-20">
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ x: 0, y: 0, opacity: 1 }}
+                animate={{
+                  x: (i % 2 === 0 ? 1 : -1) * (Math.random() * 60),
+                  y: -(Math.random() * 60),
+                  opacity: 0,
+                  scale: 0,
+                }}
+                transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.1 }}
+                className={`absolute top-1/2 left-1/2 w-1 h-1 rounded-full ${team === "left" ? "bg-blue-400" : "bg-red-400"}`}
+              />
+            ))}
+          </div>
         )}
-      >
-        {label || (team === 'left' ? 'ĐỘI ĐỎ' : 'ĐỘI XANH')}
-      </motion.div>
+      </div>
+
+      {/* VOLUME BAR */}
+      <div className="mt-4 w-full h-1 bg-gray-950/50 rounded-full overflow-hidden border border-white/5">
+        <motion.div
+          animate={{ width: `${Math.min(volume, 100)}%` }}
+          className={`h-full rounded-full ${team === "left" ? "bg-blue-500 shadow-[0_0_10px_blue]" : "bg-red-500 shadow-[0_0_10px_red]"}`}
+        />
+      </div>
     </div>
   );
-});
+};

@@ -1,50 +1,60 @@
+import React from 'react';
 import { motion } from 'motion/react';
-import { cn } from './DogCharacter';
 
-export function TugBar({ score }: { score: number }) {
-  // Score goes from -100 (left wins) to +100 (right wins)
-  // Maps to a percentage. -100 -> 0%, 0 -> 50%, 100 -> 100%
-  const clampScore = Math.max(-100, Math.min(100, score));
-  const fillPercentage = 50 + (clampScore / 2);
+interface TugBarProps {
+  score: number; // ranges from -100 to 100
+  playerTeam?: 'left' | 'right';
+}
+
+export const TugBar: React.FC<TugBarProps> = ({ score, playerTeam }) => {
+  // Map score (-100 to 100) to percentage (0% to 100%)
+  const percentage = ((score + 100) / 200) * 100;
+
+  const leftLabel = playerTeam === 'left' ? 'BẠN' : 'ĐỐI THỦ';
+  const rightLabel = playerTeam === 'right' ? 'BẠN' : 'ĐỐI THỦ';
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col items-center mt-12 mb-8 relative z-10 px-4">
-      {/* Container */}
-      <div className="w-full h-12 md:h-16 bg-gray-900/80 backdrop-blur-md rounded-full border-4 border-gray-800 relative overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-        
-        {/* Fill */}
-        <motion.div 
-          className="h-full absolute top-0 left-0 bg-gradient-to-r from-red-600 to-red-400 z-10 origin-left"
-          animate={{ width: `${fillPercentage}%` }}
-          transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-        />
-        
-        <motion.div 
-          className="h-full absolute top-0 right-0 bg-gradient-to-l from-blue-600 to-blue-400 origin-right object-cover"
-          animate={{ width: `${100 - fillPercentage}%` }}
-          transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-        />
-
-        {/* Center Marker */}
-        <div className="absolute top-0 bottom-0 left-1/2 w-1 -translate-x-1/2 bg-yellow-400 z-30 shadow-[0_0_10px_rgba(255,255,0,0.8)]" />
-        
-        {/* Moving Rope Marker */}
-        <motion.div 
-          className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center z-40"
-          animate={{ left: `${fillPercentage}%` }}
-          transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-          style={{ x: '-50%' }}
-        >
-           <div className="w-8 h-8 md:w-12 md:h-12 bg-white rounded-full border-4 border-yellow-500 shadow-[0_0_15px_rgba(255,255,255,0.8)] flex items-center justify-center">
-             <div className="w-4 h-4 bg-yellow-500 rounded-full" />
-           </div>
-        </motion.div>
+    <div className="w-full flex flex-col gap-2">
+      {/* Labels */}
+      <div className="flex justify-between px-1">
+        <span className={`text-[11px] font-black italic tracking-widest uppercase ${playerTeam === 'left' ? 'text-blue-400' : 'text-gray-500'}`}>
+          {leftLabel}
+        </span>
+        <span className={`text-[11px] font-black italic tracking-widest uppercase ${playerTeam === 'right' ? 'text-red-400' : 'text-gray-500'}`}>
+          {rightLabel}
+        </span>
       </div>
 
-      <div className="flex justify-between w-full mt-4 text-white/50 text-xs font-bold font-mono tracking-widest">
-        <span>RED TEAM</span>
-        <span>BLUE TEAM</span>
+      <div className="relative w-full h-8 md:h-10 bg-gray-950/80 rounded-2xl border-2 border-white/5 overflow-hidden shadow-[inset_0_2px_15px_rgba(0,0,0,0.8)] backdrop-blur-md">
+        {/* Left Side (Blue) */}
+        <div className="absolute inset-0 bg-blue-600/10" />
+        
+        {/* Right Side (Red) */}
+        <motion.div 
+          initial={false}
+          animate={{ width: `${percentage}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 25 }}
+          className="absolute top-0 right-0 h-full bg-gradient-to-l from-red-600 via-orange-500 to-red-600 shadow-[-10px_0_30px_rgba(239,68,68,0.5)]"
+        />
+
+        {/* Center Marker / Rope Handle */}
+        <motion.div
+          animate={{ left: `${percentage}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 25 }}
+          className="absolute top-0 bottom-0 w-2 bg-white shadow-[0_0_25px_rgba(255,255,255,1)] z-10 -translate-x-1/2"
+        >
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-[0_0_20px_white]" />
+        </motion.div>
+
+        {/* Dynamic Glow Effect when intense */}
+        {(score > 70 || score < -70) && (
+          <motion.div
+            animate={{ opacity: [0.2, 0.5, 0.2] }}
+            transition={{ repeat: Infinity, duration: 0.4 }}
+            className={`absolute inset-0 pointer-events-none ${score > 70 ? 'bg-red-500/30' : 'bg-blue-500/30'}`}
+          />
+        )}
       </div>
     </div>
   );
-}
+};
