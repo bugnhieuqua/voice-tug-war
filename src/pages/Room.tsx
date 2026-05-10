@@ -1,294 +1,429 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Copy, Mic, Volume2, Play, LogOut, CheckCircle2 } from 'lucide-react';
-import { Layout } from '../components/Layout';
-import { DogCharacter } from '../components/DogCharacter';
-import { TugBar } from '../components/TugBar';
-import { socket } from '../socket';
-import { useAudioVolume } from '../hooks/useAudioVolume';
-import { useSoundEffects } from '../hooks/useSoundEffects';
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { socket } from "../socket";
+import { Layout } from "../components/Layout";
+import { DogCharacter } from "../components/DogCharacter";
+import { TugBar } from "../components/TugBar";
+import { useAudioVolume } from "../hooks/useAudioVolume";
+import { Mic, CheckCircle2, LogOut, Copy, Play } from "lucide-react";
 
-type RoomState = {
-  id: string;
-  players: Record<string, { id: string; force: number; team: 'left' | 'right'; ready: boolean }>;
-  status: 'waiting' | 'countdown' | 'playing' | 'finished';
-  score: number;
-  timeRemaining: number;
-  winner: 'left' | 'right' | 'tie' | null;
-  countdown: number;
-};
+// Local audio from public folder
+const countdownAudio = new Audio(
+  "https://www.soundjay.com/buttons/beep-07.wav",
+);
+const victoryAudio = new Audio("/win.mp3");
+const defeatAudio = new Audio("/thua.mp3");
+// const clickAudio = new Audio("/vao.mp3");
 
-export function Room({ 
-  roomId, 
-  team, 
-  onLeave, 
-  initialState 
-}: { 
-  roomId: string, 
-  team: 'left' | 'right', 
-  onLeave: () => void,
-  initialState?: RoomState | null
+export function Room({
+  roomId,
+  team: propTeam,
+  initialState,
+  onLeave,
+}: {
+  roomId: string;
+  team: "left" | "right";
+  initialState?: any;
+  onLeave: () => void;
 }) {
-  const [room, setRoom] = useState<RoomState | null>(initialState || null);
-  const [micEnabled, setMicEnabled] = useState(false);
-  const volume = useAudioVolume(micEnabled && room?.status === 'playing');
-  const volumeRef = useRef(volume);
-  const { playCountdown, playGo, playWin, playLose } = useSoundEffects();
+  const [room, setRoom] = useState<any>(initialState || null);
+  const [team, setTeam] = useState<"left" | "right" | null>(propTeam || null);
+  const [micActive, setMicActive] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const volume = useAudioVolume(micActive && room?.status === "playing");
+
+  const [rematchRequested, setRematchRequested] = useState(false);
+  const [opponentWantsRematch, setOpponentWantsRematch] = useState(false);
 
   const prevStatusRef = useRef(room?.status);
   const prevCountdownRef = useRef(room?.countdown);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleRoomState = useCallback((newState: any) => {
+    setRoom(newState);
+  }, []);
+
+  const handleRematchPending = useCallback((data: { from: string }) => {
+    if (data.from !== socket.id) {
+      setOpponentWantsRematch(true);
+    }
+  }, []);
+
+  const handleRematchStart = useCallback(() => {
+    setRematchRequested(false);
+    setOpponentWantsRematch(false);
+  }, []);
 
   useEffect(() => {
-    console.log('[Room] Mounted, roomId:', roomId, 'initialState:', initialState);
-    
-    const handleRoomState = (state: RoomState) => {
-      console.log('[Room] Received roomState update:', state);
-      setRoom(state);
-    };
-    
-    socket.on('roomState', handleRoomState);
-    
-    // Explicitly request state as a safety measure on mount
-    console.log('[Room] Requesting current room state...');
-    socket.emit('getRoomState', roomId, (state: RoomState) => {
-      console.log('[Room] Received getRoomState response:', state);
-      if (state) setRoom(state);
-    });
-    
+    // Preload
+    victoryAudio.load();
+    defeatAudio.load();
+    // clickAudio.load();
+
+    if (!initialState) {
+      socket.emit("getRoomState", roomId, (res: any) => {
+        if (res?.roomState) {
+          setRoom(res.roomState);
+          if (res.team) setTeam(res.team);
+        }
+      });
+    }
+
+    socket.on("roomState", handleRoomState);
+    socket.on("rematch-pending", handleRematchPending);
+    socket.on("room-rematch", handleRematchStart);
+
     return () => {
-      console.log('[Room] Unmounting, cleaning up listeners...');
-      socket.off('roomState', handleRoomState);
-      socket.emit('leaveRoom');
+      socket.off("roomState", handleRoomState);
+      socket.off("rematch-pending", handleRematchPending);
+      socket.off("room-rematch", handleRematchStart);
+      socket.emit("leaveRoom");
+      // if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
     };
-  }, [roomId]);
+  }, [
+    roomId,
+    initialState,
+    handleRoomState,
+    handleRematchPending,
+    handleRematchStart,
+  ]);
 
   useEffect(() => {
     if (!room) return;
-    
-    // Play sounds on state changes
-    if (room.status === 'countdown' && prevCountdownRef.current !== room.countdown) {
-       if (room.countdown > 0) playCountdown();
+
+    if (room.status !== "finished") {
+      setRematchRequested(false);
+      setOpponentWantsRematch(false);
     }
-    
-    if (room.status === 'playing' && prevStatusRef.current === 'countdown') {
-       playGo();
+
+    if (
+      room.status === "countdown" &&
+      prevCountdownRef.current !== room.countdown
+    ) {
+      if (room.countdown > 0) {
+        countdownAudio.currentTime = 0;
+        countdownAudio.play().catch(() => {});
+      }
     }
-    
-    if (room.status === 'finished' && prevStatusRef.current === 'playing') {
-       if (room.winner === team || room.winner === 'tie') playWin();
-       else playLose();
+
+    if (room.status === "finished" && prevStatusRef.current !== "finished") {
+      if (room.winner === team) {
+        victoryAudio.currentTime = 0;
+        victoryAudio.play().catch(() => {});
+      } else if (room.winner !== "tie") {
+        defeatAudio.currentTime = 0;
+        defeatAudio.play().catch(() => {});
+      }
     }
-    
+
     prevStatusRef.current = room.status;
     prevCountdownRef.current = room.countdown;
-  }, [room?.status, room?.countdown, room?.winner, team, playCountdown, playGo, playWin, playLose]);
+  }, [room, team]);
 
-  // Sync local volume ref
-  useEffect(() => {
-    volumeRef.current = volume;
-  }, [volume]);
+  const playClick = () => {
+    /* Tạm tắt logic âm thanh click
+    clickAudio.pause();
+    clickAudio.currentTime = 0;
 
-  // Throttled volume emission
+    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+
+    clickAudio.play().catch(() => {});
+
+    // Stop after 3 seconds
+    clickTimeoutRef.current = setTimeout(() => {
+      clickAudio.pause();
+      clickAudio.currentTime = 0;
+    }, 3000);
+    */
+  };
+
+  const handleReady = () => {
+    // playClick(); // Tạm tắt: Nút BẬT MIC & SẴN SÀNG
+    // Warm up audio
+    victoryAudio
+      .play()
+      .then(() => {
+        victoryAudio.pause();
+        victoryAudio.currentTime = 0;
+      })
+      .catch(() => {});
+    defeatAudio
+      .play()
+      .then(() => {
+        defeatAudio.pause();
+        defeatAudio.currentTime = 0;
+      })
+      .catch(() => {});
+
+    setMicActive(true);
+    socket.emit("playerReady", roomId);
+  };
+
+  const handleRematch = useCallback(() => {
+    // playClick(); // Tạm tắt: Nút CHƠI LẠI
+    socket.emit("rematch-request", roomId);
+    setRematchRequested(true);
+  }, [roomId]);
+
+  const handleLeaveClick = () => {
+    // playClick(); // Tạm tắt: THOÁT / VỀ TRANG CHỦ
+    socket.emit("leaveRoom");
+    onLeave();
+  };
+
+  const copyRoomId = () => {
+    if (roomId) {
+      navigator.clipboard.writeText(roomId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   useEffect(() => {
-    if (room?.status === 'playing') {
+    if (micActive && room?.status === "playing") {
       const interval = setInterval(() => {
-         socket.emit('updateForce', roomId, volumeRef.current);
-      }, 100); 
+        socket.emit("updateForce", roomId, volume);
+      }, 100);
       return () => clearInterval(interval);
     }
-  }, [room?.status, roomId]);
+  }, [micActive, room?.status, roomId, volume]);
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(roomId);
-  }, [roomId]);
+  const players = useMemo(
+    () => (room ? Object.values(room.players) : []),
+    [room],
+  );
+  const leftPlayer: any = useMemo(
+    () => players.find((p: any) => p.team === "left"),
+    [players],
+  );
+  const rightPlayer: any = useMemo(
+    () => players.find((p: any) => p.team === "right"),
+    [players],
+  );
+  const leftVolume = useMemo(
+    () => (leftPlayer?.id === socket.id ? volume : leftPlayer?.force || 0),
+    [leftPlayer, volume],
+  );
+  const rightVolume = useMemo(
+    () => (rightPlayer?.id === socket.id ? volume : rightPlayer?.force || 0),
+    [rightPlayer, volume],
+  );
 
-  const handleReady = useCallback(() => {
-    setMicEnabled(true);
-    socket.emit('playerReady', roomId);
-  }, [roomId]);
-
-  const handleLeaveClick = useCallback(() => {
-    socket.emit('leaveRoom');
-    onLeave();
-  }, [onLeave]);
-
-  const players = useMemo(() => room ? Object.values(room.players) : [], [room]);
-  const leftPlayer = useMemo(() => players.find(p => p.team === 'left'), [players]);
-  const rightPlayer = useMemo(() => players.find(p => p.team === 'right'), [players]);
-  const me = useMemo(() => room?.players[socket.id], [room?.players]);
-  const isReady = me?.ready;
-
-  if (!room) return <Layout><div className="flex-1 flex items-center justify-center p-8 text-white text-2xl font-bold animate-pulse">Entering Arena...</div></Layout>;
+  if (!room)
+    return (
+      <Layout bgImage="https://i.pinimg.com/1200x/f8/bb/c7/f8bbc7bb3b77869d2762d1ede25ebcbf.jpg">
+        <div className="flex-1 flex items-center justify-center p-8 text-white text-2xl font-bold animate-pulse">
+          Đang vào đấu trường...
+        </div>
+      </Layout>
+    );
 
   return (
-    <Layout>
-      <div className="flex-1 flex flex-col p-4 md:p-8 max-w-7xl mx-auto w-full relative overflow-hidden">
-        
+    <Layout bgImage="https://i.pinimg.com/1200x/f8/bb/c7/f8bbc7bb3b77869d2762d1ede25ebcbf.jpg">
+      <div className="flex-1 flex flex-col p-4 md:p-8 max-w-7xl mx-auto w-full relative overflow-hidden h-screen max-h-screen">
         {/* Header */}
-        <div className="flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-5 mb-6 md:mb-10 shadow-2xl">
-          <button 
-            onClick={handleLeaveClick} 
-            className="flex items-center gap-2 text-gray-400 hover:text-red-400 font-black transition-all group"
+        <div className="flex justify-between items-center bg-gray-900/40 backdrop-blur-md p-4 rounded-2xl border border-white/5 z-20">
+          <button
+            onClick={handleLeaveClick}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-bold uppercase tracking-widest text-xs"
           >
-            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden sm:inline">LEAVE GAME</span>
+            <LogOut className="w-4 h-4" />
+            THOÁT GAME
           </button>
-          
-          <div className="flex items-center gap-2 md:gap-6">
-            <div className="flex flex-col items-end">
-               <span className="text-[10px] text-gray-500 font-black tracking-widest uppercase">Room Arena</span>
-               <span className="text-yellow-400 font-mono font-black tracking-widest text-xl md:text-2xl leading-none">
-                 {roomId}
-               </span>
+
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
+              MÃ PHÒNG
+            </span>
+            <div className="flex items-center gap-3 relative">
+              <span className="text-2xl font-black text-yellow-500 tracking-tighter">{roomId}</span>
+              <button 
+                onClick={copyRoomId}
+                className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              
+              <AnimatePresence>
+                {copied && (
+                  <motion.span 
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="absolute -left-20 top-1/2 -translate-y-1/2 bg-yellow-500 text-gray-900 text-[10px] font-black px-2 py-1 rounded-md shadow-lg"
+                  >
+                    ĐÃ COPY!
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
-            <button 
-              onClick={handleCopy} 
-              className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all active:scale-95 shadow-lg"
-              title="Copy Room ID"
-            >
-              <Copy className="w-5 h-5" />
-            </button>
           </div>
         </div>
 
-        {/* Tug Bar Area */}
-        <div className="h-28 md:h-32">
-          <AnimatePresence mode="wait">
-            {room.status !== 'waiting' && (
-              <motion.div 
-                key="tugbar"
-                initial={{ opacity: 0, y: -30, filter: 'blur(10px)' }} 
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} 
-                exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
+        {/* Tug Bar at top */}
+        <div className="mt-8 mb-4 z-20">
+          <TugBar score={room.score} />
+        </div>
+
+        {/* Arena Body */}
+        <div className="flex-1 flex flex-col items-center justify-center relative">
+          <div className="w-full flex justify-between items-center gap-4 relative z-10">
+            <DogCharacter
+              team="left"
+              volume={leftVolume}
+              label={team === "left" ? "BẠN" : "NGƯỜI THAM GIA"}
+              isWinner={room.status === "finished" && room.winner === "left"}
+              isLoser={room.status === "finished" && room.winner === "right"}
+            />
+
+            <div className="flex flex-col items-center gap-4">
+              <div className="bg-white text-gray-950 font-black px-6 py-2 rounded-full text-2xl italic tracking-tighter shadow-xl">
+                VS
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                  THỜI GIAN
+                </span>
+                <div
+                  className={`text-4xl font-black tabular-nums tracking-tighter ${room.timeRemaining <= 5 ? "text-red-500 animate-pulse" : "text-white"}`}
+                >
+                  {room.timeRemaining}s
+                </div>
+              </div>
+            </div>
+
+            <DogCharacter
+              team="right"
+              volume={rightVolume}
+              label={team === "right" ? "BẠN" : "NGƯỜI THAM GIA"}
+              isWinner={room.status === "finished" && room.winner === "right"}
+              isLoser={room.status === "finished" && room.winner === "left"}
+            />
+          </div>
+
+          <AnimatePresence>
+            {room.status === "countdown" && (
+              <motion.div
+                key="countdown"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 2, opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center text-[12rem] font-black text-yellow-500 italic drop-shadow-[0_0_50px_rgba(250,204,21,0.8)] z-50 pointer-events-none"
               >
-                 <TugBar score={room.score} />
+                {room.countdown}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Status Messages / Timer */}
-        <div className="flex justify-center my-6 h-20 items-center">
+        {/* Bottom Section - Waiting & Results */}
+        <div className="h-40 flex items-end justify-center pb-4 z-30">
           <AnimatePresence mode="wait">
-            {room.status === 'playing' ? (
-              <motion.div 
-                key="timer"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className={`text-6xl md:text-7xl font-black font-mono tabular-nums tracking-tighter drop-shadow-2xl ${
-                  room.timeRemaining <= 10 ? 'text-red-500 animate-pulse' : 'text-white'
-                }`}
+            {room.status === "waiting" && (
+              <motion.div
+                key="waiting"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-gray-900/90 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl text-center max-w-sm w-full pointer-events-auto"
               >
-                {room.timeRemaining}s
+                <h2 className="text-xl font-black text-white mb-1 uppercase tracking-tighter italic leading-none">
+                  ĐANG CHỜ ĐỐI THỦ
+                </h2>
+                <p className="text-gray-400 text-xs font-medium mb-4 leading-none">
+                  Người chơi: {players.length}/2
+                </p>
+
+                {!room.players[socket.id]?.ready ? (
+                  <button
+                    onClick={handleReady}
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-600 hover:from-yellow-300 hover:to-orange-500 text-gray-950 font-black py-3 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(250,204,21,0.3)] active:scale-95 transition-all text-sm"
+                  >
+                    <Mic className="w-5 h-5" />
+                    BẬT MIC & SẴN SÀNG
+                  </button>
+                ) : (
+                  <div className="w-full text-green-400 font-black flex items-center justify-center gap-3 bg-green-400/10 py-3 px-6 rounded-2xl border-2 border-green-400/30 italic text-sm">
+                    <CheckCircle2 className="w-5 h-5" />
+                    ĐANG CHỜ...
+                  </div>
+                )}
               </motion.div>
-            ) : room.status === 'countdown' ? (
-               <motion.div 
-                 key={room.countdown}
-                 initial={{ scale: 3, opacity: 0, rotate: -10 }}
-                 animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                 className="text-8xl font-black text-yellow-500 drop-shadow-[0_0_30px_rgba(234,179,8,0.8)] italic"
-               >
-                 {room.countdown}
-               </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
+            )}
 
-        {/* Character Battle Arena */}
-        <div className="flex-1 flex flex-col md:flex-row items-center justify-around gap-12 relative pb-24">
-           
-           {/* Left Arena */}
-           <motion.div 
-             animate={{ x: room.status === 'playing' ? -(room.score / 2) : 0 }}
-             className="flex flex-col items-center"
-           >
-             <DogCharacter 
-               team="left" 
-               volume={leftPlayer?.id === socket.id ? volume : (leftPlayer?.force || 0)} 
-               isWinner={room.status === 'finished' && room.winner === 'left'}
-               isLoser={room.status === 'finished' && room.winner === 'right'}
-             />
-           </motion.div>
-
-           {/* VS Badge */}
-           <div className="bg-white text-gray-950 font-black italic text-5xl p-6 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.3)] z-10 border-8 border-gray-900 -rotate-12 scale-75 md:scale-100">
-             VS
-           </div>
-
-           {/* Right Arena */}
-           <motion.div 
-             animate={{ x: room.status === 'playing' ? -(room.score / 2) : 0 }}
-             className="flex flex-col items-center"
-           >
-              <DogCharacter 
-                team="right" 
-                volume={rightPlayer?.id === socket.id ? volume : (rightPlayer?.force || 0)}
-                isWinner={room.status === 'finished' && room.winner === 'right'}
-                isLoser={room.status === 'finished' && room.winner === 'left'}
-              />
-           </motion.div>
-        </div>
-
-        {/* Game State Overlays */}
-        <div className="fixed inset-x-0 bottom-12 flex justify-center z-50 pointer-events-none">
-           <AnimatePresence>
-             {room.status === 'waiting' && (
-               <motion.div 
-                 initial={{ y: 100, opacity: 0 }}
-                 animate={{ y: 0, opacity: 1 }}
-                 exit={{ y: 100, opacity: 0 }}
-                 className="bg-gray-900 border-2 border-gray-700 p-8 rounded-[2rem] shadow-2xl flex flex-col items-center max-w-md w-full pointer-events-auto mx-4"
-               >
-                 <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">
-                   Waiting for Arena
-                 </h3>
-                 <p className="text-gray-500 font-bold mb-6">Players: {players.length}/2</p>
-                 
-                 {!isReady ? (
-                   <button 
-                     onClick={handleReady}
-                     className="w-full bg-gradient-to-r from-yellow-400 to-orange-600 hover:from-yellow-300 hover:to-orange-500 text-gray-950 font-black py-4 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(250,204,21,0.3)] active:scale-95 transition-all"
-                   >
-                     <Mic className="w-6 h-6" />
-                     ACTIVATE MIC & READY
-                   </button>
-                 ) : (
-                   <div className="w-full text-green-400 font-black flex items-center justify-center gap-3 bg-green-400/10 py-4 px-8 rounded-2xl border-2 border-green-400/30 italic">
-                     <CheckCircle2 className="w-6 h-6" />
-                     STANDBY...
-                   </div>
-                 )}
-               </motion.div>
-             )}
-
-             {room.status === 'finished' && (
-                <motion.div 
-                  initial={{ scale: 0.5, opacity: 0, y: 100 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  className="bg-gray-950 border-4 border-yellow-500 p-10 rounded-[3rem] shadow-[0_0_100px_rgba(250,204,21,0.4)] text-center max-w-md w-full pointer-events-auto mx-4"
-                >
-                  <motion.div 
+            {room.status === "finished" && (
+              <motion.div
+                key="finished"
+                initial={{ scale: 0.5, opacity: 0, y: 100 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="bg-gray-950/95 border-4 border-yellow-500 p-8 rounded-[2.5rem] shadow-[0_0_100px_rgba(250,204,21,0.4)] text-center max-w-md w-full pointer-events-auto backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <motion.div
                     animate={{ rotate: [0, 10, -10, 0] }}
                     transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="text-7xl mb-6"
+                    className="text-4xl"
                   >
-                    🏆
+                    {room.winner === "tie"
+                      ? "🤝"
+                      : room.winner === team
+                        ? "🏆"
+                        : "💀"}
                   </motion.div>
-                  <h2 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 mb-8 italic uppercase tracking-tighter">
-                    {room.winner === 'tie' ? "DRAW!" : room.winner === team ? 'VICTORY' : 'DEFEAT'}
+                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">
+                    {room.winner === "tie"
+                      ? "HÒA!"
+                      : room.winner === team
+                        ? "CHIẾN THẮNG"
+                        : "THẤT BẠI"}
                   </h2>
-                  
-                  <button 
-                    onClick={handleLeaveClick}
-                    className="w-full bg-white text-gray-950 hover:bg-gray-200 font-black py-5 px-10 rounded-2xl transition-all shadow-xl active:scale-95 text-xl"
-                  >
-                    RETURN HOME
-                  </button>
-                </motion.div>
-             )}
-           </AnimatePresence>
-        </div>
+                </div>
 
+                {opponentWantsRematch && !rematchRequested && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-yellow-500 font-black mb-4 italic animate-pulse text-xs"
+                  >
+                    ĐỐI THỦ MUỐN CHƠI LẠI!
+                  </motion.p>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleRematch}
+                    disabled={rematchRequested}
+                    className={`flex-1 font-black py-3 px-6 rounded-xl transition-all shadow-xl active:scale-95 text-sm flex items-center justify-center gap-2 ${
+                      rematchRequested
+                        ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-yellow-400 to-orange-600 text-gray-950 hover:from-yellow-300 hover:to-orange-500"
+                    }`}
+                  >
+                    {rematchRequested ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ĐANG CHỜ...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4" />
+                        CHƠI LẠI
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleLeaveClick}
+                    className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-3 px-6 rounded-xl transition-all active:scale-95 text-sm border border-white/10"
+                  >
+                    VỀ TRANG CHỦ
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </Layout>
   );

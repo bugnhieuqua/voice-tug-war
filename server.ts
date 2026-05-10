@@ -50,6 +50,8 @@ async function startServer() {
     }
   });
 
+  let matchmakingQueue: string[] = [];
+
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
 
@@ -112,6 +114,87 @@ async function startServer() {
       callback({ success: true, team, roomState: room });
     });
 
+    // --- NEW: Matchmaking Logic ---
+    socket.on('find-match', () => {
+      if (matchmakingQueue.includes(socket.id)) return;
+      if (socketToRoom.has(socket.id)) return;
+
+      matchmakingQueue.push(socket.id);
+      console.log(`[Matchmaking] Added ${socket.id}. Queue size: ${matchmakingQueue.length}`);
+      
+      socket.emit('queue-status', { status: 'searching' });
+
+      if (matchmakingQueue.length >= 2) {
+        const p1Id = matchmakingQueue.shift()!;
+        const p2Id = matchmakingQueue.shift()!;
+        
+        const roomId = "MATCH_" + generateRoomCode();
+        rooms.set(roomId, {
+          id: roomId,
+          players: {},
+          status: 'waiting',
+          score: 0,
+          timeRemaining: 30,
+          winner: null,
+          countdown: 3,
+        });
+
+        const room = rooms.get(roomId)!;
+        
+        // Add both players
+        [p1Id, p2Id].forEach((id, index) => {
+          const team = index === 0 ? 'left' : 'right';
+          room.players[id] = { id, force: 0, team, ready: false };
+          socketToRoom.set(id, roomId);
+          const pSocket = io.sockets.sockets.get(id);
+          if (pSocket) {
+            pSocket.join(roomId);
+            pSocket.emit('match-found', { roomId, team, roomState: room });
+          }
+        });
+        
+        io.to(roomId).emit('roomState', room);
+      }
+    });
+
+    socket.on('cancel-match', () => {
+      matchmakingQueue = matchmakingQueue.filter(id => id !== socket.id);
+      socket.emit('queue-status', { status: 'idle' });
+    });
+
+    // --- NEW: Rematch Logic ---
+    socket.on('rematch-request', (roomId) => {
+      const room = rooms.get(roomId?.toUpperCase());
+      if (!room || room.status !== 'finished') return;
+
+      // Mark this player as wanting a rematch
+      const player = room.players[socket.id];
+      if (player) {
+        player.ready = true; // Use ready flag for rematch request
+        io.to(roomId).emit('roomState', room);
+        io.to(roomId).emit('rematch-pending', { from: socket.id });
+
+        // Check if both players want a rematch
+        const allWantRematch = Object.values(room.players).every(p => p.ready);
+        if (allWantRematch && Object.keys(room.players).length === 2) {
+          // RESET ROOM
+          room.status = 'waiting';
+          room.score = 0;
+          room.timeRemaining = 30;
+          room.winner = null;
+          room.countdown = 3;
+          Object.values(room.players).forEach(p => {
+             p.ready = false;
+             p.force = 0;
+          });
+          
+          io.to(roomId).emit('roomState', room);
+          io.to(roomId).emit('rematch-start');
+          startCountdown(roomId);
+        }
+      }
+    });
+
     socket.on('playerReady', (roomId) => {
       if (typeof roomId !== 'string') return;
       const room = rooms.get(roomId.toUpperCase());
@@ -129,11 +212,13 @@ async function startServer() {
     });
 
     socket.on('updateForce', (roomId, force) => {
-      if (typeof roomId !== 'string') return;
-      const room = rooms.get(roomId.toUpperCase());
-      if (room && room.status === 'playing' && room.players[socket.id]) {
-        if (typeof force !== 'number' || isNaN(force)) return;
-        room.players[socket.id].force = Math.max(0, Math.min(100, force));
+      const room = rooms.get(roomId?.toUpperCase());
+      if (!room || room.status !== 'playing') return;
+      const player = room.players[socket.id];
+      if (player) {
+        // Anti-cheat: Validate force range and type
+        const validatedForce = typeof force === 'number' ? Math.max(0, Math.min(100, force)) : 0;
+        player.force = validatedForce;
       }
     });
 
@@ -143,6 +228,8 @@ async function startServer() {
 
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
+      // Clean up matchmaking queue
+      matchmakingQueue = matchmakingQueue.filter(id => id !== socket.id);
       handlePlayerLeave(socket.id);
     });
 
@@ -157,14 +244,16 @@ async function startServer() {
     const room = rooms.get(roomId);
     if (!room) return;
 
+    // Clear any existing countdown/game loops to prevent overlap
+    if (countdownIntervals.has(roomId)) {
+      clearInterval(countdownIntervals.get(roomId)!);
+    }
+    stopGameLoop(roomId);
+
     room.status = 'countdown';
     room.countdown = 3;
     io.to(roomId).emit('roomState', room);
     
-    if (countdownIntervals.has(roomId)) {
-      clearInterval(countdownIntervals.get(roomId)!);
-    }
-
     const countInterval = setInterval(() => {
       const r = rooms.get(roomId);
       if (!r || r.status !== 'countdown') {
@@ -200,24 +289,25 @@ async function startServer() {
     if (room) {
       delete room.players[socketId];
       
-      // Stop countdown if active
+      // Stop all active timers for this room
       if (countdownIntervals.has(roomId)) {
         clearInterval(countdownIntervals.get(roomId)!);
         countdownIntervals.delete(roomId);
       }
+      stopGameLoop(roomId);
 
       if (Object.keys(room.players).length === 0) {
-        stopGameLoop(roomId);
         rooms.delete(roomId);
       } else {
-        // Reset room to waiting if someone left
+        // Inform remaining player
         room.status = 'waiting';
         room.score = 0;
         room.winner = null;
+        // Reset ready state for the remaining player
         Object.values(room.players).forEach(p => p.ready = false);
+        
         io.to(roomId).emit('playerDisconnected', socketId);
         io.to(roomId).emit('roomState', room);
-        stopGameLoop(roomId);
       }
     }
   }
@@ -252,8 +342,8 @@ async function startServer() {
       const leftForce = leftPlayer?.force || 0;
       const rightForce = rightPlayer?.force || 0;
 
-      const netForce = (rightForce - leftForce) * MULTIPLIER;
-      room.score += netForce * 0.05; // Slightly faster tugging for more excitement
+      const netForce = (leftForce - rightForce) * 1.5;
+      room.score += netForce * 0.05;
       
       // Boundaries
       if (room.score <= -MAX_SCORE) {

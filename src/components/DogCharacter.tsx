@@ -11,16 +11,17 @@ export const DogCharacter = memo(function DogCharacter({
   volume, 
   team, 
   isWinner, 
-  isLoser 
+  isLoser,
+  label
 }: { 
   volume: number; 
   team: 'left' | 'right'; 
   isWinner?: boolean;
   isLoser?: boolean;
+  label?: string;
 }) {
   const isYelling = volume > 15;
 
-  // Map 0-100 volume to a reasonable scale and "lifting" height
   const lift = isYelling ? -(volume / 100) * 40 : 0;
   const scale = isWinner ? 1.5 : isLoser ? 0.8 : 1 + (volume / 100) * 0.3;
   
@@ -75,7 +76,6 @@ export const DogCharacter = memo(function DogCharacter({
           alt="Dog Player" 
         />
         
-        {/* Glow overlay when yelling */}
         {isYelling && !isWinner && !isLoser && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -88,7 +88,6 @@ export const DogCharacter = memo(function DogCharacter({
         )}
       </motion.div>
       
-      {/* Dynamic Sound Waves */}
       {isYelling && !isWinner && !isLoser && (
          <div className="absolute -top-12 flex gap-1.5 h-8 items-end">
            {[...Array(5)].map((_, i) => (
@@ -108,15 +107,14 @@ export const DogCharacter = memo(function DogCharacter({
          </div>
       )}
 
-      {/* Team Label */}
       <motion.div 
         animate={{ scale: isYelling ? 1.1 : 1 }}
         className={cn(
-          "mt-6 px-6 py-2 rounded-xl text-white font-black tracking-widest text-base shadow-xl",
+          "mt-6 px-6 py-2 rounded-xl text-white font-black tracking-widest text-base shadow-xl min-w-[120px] text-center",
           team === 'left' ? 'bg-gradient-to-br from-red-600 to-red-800' : 'bg-gradient-to-br from-blue-600 to-blue-800'
         )}
       >
-        {team === 'left' ? 'RED TEAM' : 'BLUE TEAM'}
+        {label || (team === 'left' ? 'ĐỘI ĐỎ' : 'ĐỘI XANH')}
       </motion.div>
     </div>
   );
