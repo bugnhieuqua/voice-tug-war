@@ -8,18 +8,18 @@ const searchingAudio = new Audio("/timdoithu.mp3");
 const matchFoundAudio = new Audio("/win.mp3");
 
 const SLIDE_IMAGES = [
-  "https://i.pinimg.com/736x/87/42/7f/87427f7142823674686940a08e18f268.jpg",
-  "https://i.pinimg.com/736x/f6/8e/4a/f68e4a9e9e1e9e0e9e0e9e0e9e0e9e0e.jpg", // Placeholder, will be corrected if needed
-  "https://i.pinimg.com/736x/4d/1e/8a/4d1e8a9e9e1e9e0e9e0e9e0e9e0e9e0e.jpg",
-  "https://i.pinimg.com/736x/cow_tug_war_1.jpg",
-  "https://i.pinimg.com/736x/cow_tug_war_2.jpg",
-  "https://i.pinimg.com/736x/cow_tug_war_3.jpg",
+  "https://i.pinimg.com/736x/07/16/a8/0716a8e465a5a2e9a8e78f37c0b8cd9c.jpg",
+  "https://i.pinimg.com/736x/3a/a7/72/3aa7720a5ecf466299e0f9dd07b6ae26.jpg",
+  "https://i.pinimg.com/736x/24/4f/35/244f35f0680668767abfd7377224a66d.jpg",
+  "https://i.pinimg.com/736x/fc/2f/81/fc2f818b181064e875ee51ee6973361a.jpg",
+  "https://i.pinimg.com/736x/e1/86/e6/e186e6b5963d6d12649c73315fe99431.jpg",
+  "https://i.pinimg.com/736x/d7/21/b3/d721b346b2c727ab885ab383dc242c8a.jpg",
+  "https://i.pinimg.com/1200x/ed/19/09/ed1909bbfc9ac7b08d748338e6ead86a.jpg",
 ];
 
 const SEARCHING_IMAGES = [
-  "https://i.pinimg.com/736x/cow_searching_1.jpg",
-  "https://i.pinimg.com/736x/cow_searching_2.jpg",
-  "https://i.pinimg.com/736x/cow_searching_3.jpg",
+  "/cow_search.png",
+  "https://i.pinimg.com/736x/87/42/7f/87427f7142823674686940a08e18f268.jpg",
 ];
 
 export function Home({
