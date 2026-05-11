@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { socket } from '../socket';
 import { Layout } from '../components/Layout';
-import { DogCharacter } from '../components/DogCharacter';
+import { CowCharacter } from '../components/CowCharacter';
 import { TugBar } from '../components/TugBar';
 import { useAudioVolume } from '../hooks/useAudioVolume';
 import { Mic, CheckCircle2, LogOut, Copy, AlertCircle } from 'lucide-react';
@@ -177,7 +177,7 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
         {/* CENTER: BATTLE ARENA */}
         <div className="flex-1 flex items-center justify-center relative min-h-0">
           <div className="w-full max-w-4xl flex justify-between items-center gap-2 md:gap-12 relative z-10">
-             <DogCharacter 
+             <CowCharacter 
                 team="left" 
                 volume={leftVolume} 
                 label={team === 'left' ? 'BẠN' : 'ĐỐI THỦ'}
@@ -189,7 +189,7 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                 <div className="bg-white text-gray-950 font-black px-4 py-1 md:px-6 md:py-2 rounded-full text-lg md:text-2xl italic tracking-tighter shadow-xl">VS</div>
              </div>
 
-             <DogCharacter 
+             <CowCharacter 
                 team="right" 
                 volume={rightVolume} 
                 label={team === 'right' ? 'BẠN' : 'ĐỐI THỦ'}

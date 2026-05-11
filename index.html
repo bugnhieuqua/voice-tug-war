@@ -2,19 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <link rel="icon" type="image/jpeg" href="https://i.pinimg.com/736x/ba/8d/16/ba8d1675c50578787597603adf2ce92b.jpg" />
-    <title>DOG WAR | Yell to Win!</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <link
+      rel="icon"
+      type="image/jpeg"
+      href="public/bo.png"
+    />
+    <title>COW WAR | Yell to Win!</title>
     <script>
       try {
         const _fetch = window.fetch;
-        Object.defineProperty(window, 'fetch', {
+        Object.defineProperty(window, "fetch", {
           get: () => _fetch,
           set: () => {
-            console.warn('Ignored attempt to overwrite window.fetch');
+            console.warn("Ignored attempt to overwrite window.fetch");
           },
           configurable: true,
-          enumerable: true
+          enumerable: true,
         });
       } catch (e) {
         // Ignore if not configurable
@@ -26,4 +33,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

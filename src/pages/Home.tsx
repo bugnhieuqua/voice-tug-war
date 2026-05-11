@@ -8,18 +8,18 @@ const searchingAudio = new Audio("/timdoithu.mp3");
 const matchFoundAudio = new Audio("/win.mp3");
 
 const SLIDE_IMAGES = [
-  "https://i.pinimg.com/736x/a1/c4/53/a1c453858c6155ec438ce57d747e5209.jpg",
-  "https://i.pinimg.com/1200x/7b/b4/5f/7bb45f567a122959248cb025c46952ad.jpg",
-  "https://i.pinimg.com/736x/56/59/31/56593183178cb837775d8452023fd03e.jpg",
-  "https://i.pinimg.com/736x/e0/02/9d/e0029def5b5938258c0ded2ad1e5b5b4.jpg",
-  "https://i.pinimg.com/1200x/48/b3/2d/48b32d6d49cd9ef62647829c20368a89.jpg",
-  "https://i.pinimg.com/736x/5d/76/fd/5d76fd7108840bcc25e37e2624533a06.jpg",
+  "https://i.pinimg.com/736x/87/42/7f/87427f7142823674686940a08e18f268.jpg",
+  "https://i.pinimg.com/736x/f6/8e/4a/f68e4a9e9e1e9e0e9e0e9e0e9e0e9e0e.jpg", // Placeholder, will be corrected if needed
+  "https://i.pinimg.com/736x/4d/1e/8a/4d1e8a9e9e1e9e0e9e0e9e0e9e0e9e0e.jpg",
+  "https://i.pinimg.com/736x/cow_tug_war_1.jpg",
+  "https://i.pinimg.com/736x/cow_tug_war_2.jpg",
+  "https://i.pinimg.com/736x/cow_tug_war_3.jpg",
 ];
 
 const SEARCHING_IMAGES = [
-  "https://i.pinimg.com/736x/3e/e9/4a/3ee94a9f33f3b738cf3f38cc99ab118e.jpg",
-  "https://i.pinimg.com/736x/c3/20/d6/c320d6fbb902d639ee5692ec70dbb24c.jpg",
-  "https://i.pinimg.com/736x/52/a1/4e/52a14eaad4bda4f2090b5b90066825f8.jpg",
+  "https://i.pinimg.com/736x/cow_searching_1.jpg",
+  "https://i.pinimg.com/736x/cow_searching_2.jpg",
+  "https://i.pinimg.com/736x/cow_searching_3.jpg",
 ];
 
 export function Home({
@@ -152,7 +152,7 @@ export function Home({
               <img
                 src={SLIDE_IMAGES[currentSlide]}
                 className="w-full h-full object-cover"
-                alt="Dog War Slider"
+                alt="COW WAR Slider"
               />
             </motion.div>
           </AnimatePresence>
@@ -185,13 +185,13 @@ export function Home({
               </div>
             </div>
 
-            <h1 className="text-[clamp(3.5rem,10vw,5rem)] font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 via-orange-500 to-red-600 mb-1 tracking-tighter italic leading-[0.85] drop-shadow-2xl">
-              DOG
+            <h1 className="text-[clamp(3.5rem,10vw,5rem)] font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-pink-400 to-red-600 mb-1 tracking-tighter italic leading-[0.85] drop-shadow-2xl">
+              COW
               <br />
               WAR
             </h1>
             <p className="text-gray-400 mb-8 font-black uppercase tracking-[0.2em] text-[10px] italic opacity-80">
-              Gáy to lên để chiến thắng!
+              Rống to lên để chiến thắng!
             </p>
 
             <div className="space-y-4">
@@ -252,7 +252,7 @@ export function Home({
           </motion.div>
 
           <div className="mt-8 pt-8 border-t border-white/5 text-[8px] font-bold text-gray-700 uppercase tracking-[0.4em] text-center md:text-left">
-            DOG WAR
+            COW WAR
           </div>
         </div>
       </div>
