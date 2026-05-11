@@ -342,8 +342,8 @@ async function startServer() {
       const leftForce = leftPlayer?.force || 0;
       const rightForce = rightPlayer?.force || 0;
 
-      const netForce = (leftForce - rightForce) * 1.5;
-      room.score += netForce * 0.05;
+      const netForce = (rightForce - leftForce) * 1.2;
+      room.score += netForce * 0.02;
       
       // Boundaries
       if (room.score <= -MAX_SCORE) {

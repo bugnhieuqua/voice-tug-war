@@ -131,7 +131,14 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
 
   return (
     <Layout bgImage="https://i.pinimg.com/1200x/f8/bb/c7/f8bbc7bb3b77869d2762d1ede25ebcbf.jpg">
-      <div className="flex-1 flex flex-col w-full h-full p-4 md:p-8 max-w-5xl mx-auto relative overflow-hidden">
+      <motion.div 
+        animate={room?.status === 'playing' && (leftVolume > 50 || rightVolume > 50) ? {
+          x: [0, -2, 2, -1, 1, 0],
+          y: [0, 1, -1, 2, -2, 0]
+        } : {}}
+        transition={{ repeat: Infinity, duration: 0.1 }}
+        className="flex-1 flex flex-col w-full h-full p-4 md:p-8 max-w-5xl mx-auto relative overflow-hidden"
+      >
         
         {/* TOP: STATUS & TIMER */}
         <div className="flex flex-col gap-4 z-30">
@@ -240,9 +247,10 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                         THOÁT
                       </button>
                    </div>
-                 </motion.div>
+                  </motion.div>
               )}
            </AnimatePresence>
+        </div>
 
            <div className="flex justify-between items-center bg-gray-950/40 backdrop-blur-lg px-5 py-3 rounded-2xl border border-white/5 max-w-xs mx-auto w-full">
               <div className="flex flex-col">
@@ -254,8 +262,7 @@ export function Room({ roomId, team: propTeam, initialState, onLeave }: {
                 {copied && <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: -20 }} exit={{ opacity: 0 }} className="absolute right-0 bg-yellow-500 text-gray-950 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">COPIED!</motion.span>}
               </button>
            </div>
-        </div>
-      </div>
+      </motion.div>
       
       {!audioUnlocked && micActive && (
         <div className="fixed inset-0 z-[200] bg-gray-950/80 backdrop-blur-md flex items-center justify-center p-6">

@@ -27,7 +27,11 @@ export const TugBar: React.FC<TugBarProps> = ({ score, playerTeam }) => {
 
       <div className="relative w-full h-8 md:h-10 bg-gray-950/80 rounded-2xl border-2 border-white/5 overflow-hidden shadow-[inset_0_2px_15px_rgba(0,0,0,0.8)] backdrop-blur-md">
         {/* Left Side (Blue) */}
-        <div className="absolute inset-0 bg-blue-600/10" />
+        <motion.div 
+          initial={false}
+          animate={{ opacity: score < 0 ? 0.4 : 0.1 }}
+          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-500/20 to-transparent" 
+        />
         
         {/* Right Side (Red) */}
         <motion.div 
@@ -40,10 +44,10 @@ export const TugBar: React.FC<TugBarProps> = ({ score, playerTeam }) => {
         {/* Center Marker / Rope Handle */}
         <motion.div
           animate={{ left: `${percentage}%` }}
-          transition={{ type: "spring", stiffness: 120, damping: 25 }}
-          className="absolute top-0 bottom-0 w-2 bg-white shadow-[0_0_25px_rgba(255,255,255,1)] z-10 -translate-x-1/2"
+          transition={{ type: "spring", stiffness: 150, damping: 20 }}
+          className="absolute top-0 bottom-0 w-2 bg-white shadow-[0_0_30px_rgba(255,255,255,1)] z-10 -translate-x-1/2"
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-[0_0_20px_white]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full shadow-[0_0_25px_white] border-2 border-gray-400" />
         </motion.div>
 
         {/* Dynamic Glow Effect when intense */}

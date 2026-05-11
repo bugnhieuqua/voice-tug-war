@@ -42,6 +42,22 @@ export const DogCharacter: React.FC<DogCharacterProps> = ({
             </>
           )}
         </AnimatePresence>
+        
+        {/* WINNER CROWN */}
+        <AnimatePresence>
+          {isWinner && (
+            <motion.div
+              initial={{ y: -20, opacity: 0, rotate: -10 }}
+              animate={{ y: -45, opacity: 1, rotate: 0 }}
+              className="absolute top-0 z-30 flex flex-col items-center"
+            >
+              <div className="bg-yellow-500 text-gray-950 text-[10px] font-black px-3 py-1 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.8)] border-2 border-white uppercase italic tracking-tighter">
+                CHAMPION
+              </div>
+              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-yellow-500" />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* GLOW EFFECT */}
         <motion.div
@@ -109,10 +125,13 @@ export const DogCharacter: React.FC<DogCharacterProps> = ({
       </div>
 
       {/* VOLUME BAR */}
-      <div className="mt-4 w-full h-1 bg-gray-950/50 rounded-full overflow-hidden border border-white/5">
+      <div className="mt-4 w-full h-1.5 bg-gray-950/50 rounded-full overflow-hidden border border-white/10 shadow-inner">
         <motion.div
-          animate={{ width: `${Math.min(volume, 100)}%` }}
-          className={`h-full rounded-full ${team === "left" ? "bg-blue-500 shadow-[0_0_10px_blue]" : "bg-red-500 shadow-[0_0_10px_red]"}`}
+          animate={{ 
+            width: `${Math.min(volume, 100)}%`,
+            backgroundColor: isSpeaking ? (team === 'left' ? '#60a5fa' : '#f87171') : (team === 'left' ? '#3b82f6' : '#ef4444')
+          }}
+          className={`h-full rounded-full transition-colors ${team === "left" ? "shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "shadow-[0_0_15px_rgba(239,68,68,0.5)]"}`}
         />
       </div>
     </div>
